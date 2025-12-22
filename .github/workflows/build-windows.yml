@@ -40,29 +40,29 @@ jobs:
           Remove-Item python-embed.zip
         shell: pwsh
 
-      - name: Setup pip in embedded Python
+      - name: Modify _pth file to enable site-packages
+        run: |
+          cd backend/python-embed
+          $pthFile = Get-ChildItem -Filter "python*._pth" | Select-Object -First 1
+          Add-Content $pthFile.FullName "Lib/site-packages"
+        shell: pwsh
+
+      - name: Download get-pip
         run: |
           cd backend/python-embed
           curl -L -o get-pip.py https://bootstrap.pypa.io/get-pip.py
-          ./python.exe get-pip.py --no-warn-script-location
         shell: pwsh
 
-      - name: Create pth file for site-packages
+      - name: Install pip
         run: |
           cd backend/python-embed
-          echo "import site; site.addsitedir('Lib/site-packages')" > python311._pth
+          ./python.exe get-pip.py --no-warn-script-location
         shell: pwsh
 
       - name: Install Python dependencies
         run: |
           cd backend/python-embed
-          ./python.exe -m pip install --upgrade pip
-          ./python.exe -m pip install -r ../requirements.txt --target ./Lib/site-packages --no-warn-script-location
-        shell: pwsh
-
-      - name: Update Rust code for Windows
-        run: |
-          echo 'Rust code already supports Windows'
+          ./python.exe -m pip install -r ../requirements.txt --target ./Lib/site-packages
         shell: pwsh
 
       - name: Build Tauri app
@@ -77,5 +77,5 @@ jobs:
       - name: Upload NSIS installer
         uses: actions/upload-artifact@v4
         with:
-          name: windows-installer-nsis
+          name: windows-installer-exe
           path: src-tauri/target/release/bundle/nsis/*.exe
