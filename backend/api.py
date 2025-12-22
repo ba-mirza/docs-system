@@ -3,10 +3,6 @@ import tempfile
 from typing import Optional
 
 from dotenv import load_dotenv
-from fastapi import Body, FastAPI, File, Form, UploadFile
-from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse
-
 from excel_export import generate_excel_from_api_response
 from excel_parser import (
     merge_all_data,
@@ -14,6 +10,9 @@ from excel_parser import (
     parse_manager_sheet,
     validate_bom_with_pdf,
 )
+from fastapi import Body, FastAPI, File, Form, Header, UploadFile
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse
 from parser import parse_drawing_pdf_ai
 
 load_dotenv()
@@ -77,6 +76,7 @@ async def parse_pdf(
         None, description="Manager Excel file (optional)"
     ),
     bom_sheet_index: int = Form(0, description="BOM sheet index (0-13 for Foglio1-14)"),
+    x_api_key: Optional[str] = Header(None),
 ):
     """
     Полный workflow с валидацией:
@@ -142,13 +142,11 @@ async def parse_pdf(
             manager_path = manager_tmp.name
 
     try:
-        api_key = os.getenv("ANTHROPIC_API_KEY")
-
-        if not api_key:
+        if not x_api_key:
             return {"success": False, "error": "API ключ не найден"}
 
         # ШАГ 1: Парсим PDF
-        pdf_data = parse_drawing_pdf_ai(pdf_path, api_key)
+        pdf_data = parse_drawing_pdf_ai(pdf_path, x_api_key)
 
         # Извлекаем SIZE, ASME, ENDS из table1
         table1 = pdf_data.get("table1", [])
