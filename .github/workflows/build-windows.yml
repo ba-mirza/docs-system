@@ -44,14 +44,20 @@ jobs:
         run: |
           cd backend/python-embed
           curl -L -o get-pip.py https://bootstrap.pypa.io/get-pip.py
-          ./python.exe get-pip.py
-          Remove-Item get-pip.py
+          ./python.exe get-pip.py --no-warn-script-location
+        shell: pwsh
+
+      - name: Create pth file for site-packages
+        run: |
+          cd backend/python-embed
+          echo "import site; site.addsitedir('Lib/site-packages')" > python311._pth
         shell: pwsh
 
       - name: Install Python dependencies
         run: |
-          cd backend
-          ./python-embed/python.exe -m pip install -r requirements.txt --target python-embed/Lib/site-packages
+          cd backend/python-embed
+          ./python.exe -m pip install --upgrade pip
+          ./python.exe -m pip install -r ../requirements.txt --target ./Lib/site-packages --no-warn-script-location
         shell: pwsh
 
       - name: Update Rust code for Windows
