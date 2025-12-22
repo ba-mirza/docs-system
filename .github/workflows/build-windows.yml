@@ -30,7 +30,10 @@ jobs:
           python-version: "3.11"
 
       - name: Install frontend dependencies
-        run: npm install
+        run: |
+          Remove-Item -Force package-lock.json -ErrorAction SilentlyContinue
+          npm install
+        shell: pwsh
 
       - name: Download Python Embeddable
         run: |
