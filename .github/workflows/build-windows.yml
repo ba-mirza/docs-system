@@ -11,74 +11,84 @@ jobs:
     runs-on: windows-latest
 
     steps:
-      - name: Checkout code
+      - name: Checkout repository
         uses: actions/checkout@v4
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: "20"
+          cache: "npm"
 
       - name: Setup Rust
         uses: dtolnay/rust-toolchain@stable
         with:
           targets: x86_64-pc-windows-msvc
 
-      - name: Setup Python
-        uses: actions/setup-python@v5
+      - name: Rust cache
+        uses: swatinem/rust-cache@v2
         with:
-          python-version: "3.11"
+          workspaces: "./src-tauri -> target"
 
       - name: Install frontend dependencies
         run: |
-          Remove-Item -Force package-lock.json -ErrorAction SilentlyContinue
-          npm install
+          npm clean-install
         shell: pwsh
 
       - name: Download Python Embeddable
         run: |
-          mkdir -p backend/python-embed
-          curl -L -o python-embed.zip https://www.python.org/ftp/python/3.11.9/python-3.11.9-embed-amd64.zip
-          tar -xf python-embed.zip -C backend/python-embed
-          Remove-Item python-embed.zip
+          New-Item -Path "backend/python-embed" -ItemType Directory -Force
+          Invoke-WebRequest -Uri "https://www.python.org/ftp/python/3.11.9/python-3.11.9-embed-amd64.zip" -OutFile "python-embed.zip"
+          Expand-Archive -Path "python-embed.zip" -DestinationPath "backend/python-embed" -Force
+          Remove-Item "python-embed.zip"
         shell: pwsh
 
-      - name: Modify _pth file to enable site-packages
+      - name: Configure Python path
         run: |
-          cd backend/python-embed
-          $pthFile = Get-ChildItem -Filter "python*._pth" | Select-Object -First 1
-          Add-Content $pthFile.FullName "Lib/site-packages"
+          $pthFile = Get-ChildItem -Path "backend/python-embed" -Filter "python*._pth" | Select-Object -First 1
+          if ($pthFile) {
+            Add-Content -Path $pthFile.FullName -Value "Lib/site-packages"
+            Write-Host "Updated $($pthFile.Name)"
+            Get-Content $pthFile.FullName
+          }
         shell: pwsh
 
-      - name: Download get-pip
+      - name: Install pip in embedded Python
         run: |
           cd backend/python-embed
-          curl -L -o get-pip.py https://bootstrap.pypa.io/get-pip.py
-        shell: pwsh
-
-      - name: Install pip
-        run: |
-          cd backend/python-embed
-          ./python.exe get-pip.py --no-warn-script-location
+          Invoke-WebRequest -Uri "https://bootstrap.pypa.io/get-pip.py" -OutFile "get-pip.py"
+          .\python.exe get-pip.py --no-warn-script-location
+          Remove-Item "get-pip.py"
         shell: pwsh
 
       - name: Install Python dependencies
         run: |
           cd backend/python-embed
-          ./python.exe -m pip install -r ../requirements.txt --target ./Lib/site-packages
+          .\python.exe -m pip install --upgrade pip setuptools wheel
+          .\python.exe -m pip install -r ../requirements.txt --target ./Lib/site-packages --no-warn-script-location
         shell: pwsh
 
-      - name: Build Tauri app
+      - name: Verify Python setup
+        run: |
+          cd backend/python-embed
+          .\python.exe --version
+          .\python.exe -m pip list
+        shell: pwsh
+
+      - name: Build Tauri application
         run: npm run tauri:build
+        shell: pwsh
 
       - name: Upload MSI installer
         uses: actions/upload-artifact@v4
         with:
           name: windows-installer-msi
           path: src-tauri/target/release/bundle/msi/*.msi
+          if-no-files-found: warn
 
       - name: Upload NSIS installer
         uses: actions/upload-artifact@v4
         with:
           name: windows-installer-exe
           path: src-tauri/target/release/bundle/nsis/*.exe
+          if-no-files-found: warn
