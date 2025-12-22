@@ -1,0 +1,75 @@
+name: Build Windows Installer
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - "v*"
+
+jobs:
+  build-windows:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: x86_64-pc-windows-msvc
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install frontend dependencies
+        run: npm install
+
+      - name: Download Python Embeddable
+        run: |
+          mkdir -p backend/python-embed
+          curl -L -o python-embed.zip https://www.python.org/ftp/python/3.11.9/python-3.11.9-embed-amd64.zip
+          tar -xf python-embed.zip -C backend/python-embed
+          Remove-Item python-embed.zip
+        shell: pwsh
+
+      - name: Setup pip in embedded Python
+        run: |
+          cd backend/python-embed
+          curl -L -o get-pip.py https://bootstrap.pypa.io/get-pip.py
+          ./python.exe get-pip.py
+          Remove-Item get-pip.py
+        shell: pwsh
+
+      - name: Install Python dependencies
+        run: |
+          cd backend
+          ./python-embed/python.exe -m pip install -r requirements.txt --target python-embed/Lib/site-packages
+        shell: pwsh
+
+      - name: Update Rust code for Windows
+        run: |
+          echo 'Rust code already supports Windows'
+        shell: pwsh
+
+      - name: Build Tauri app
+        run: npm run tauri:build
+
+      - name: Upload MSI installer
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-installer-msi
+          path: src-tauri/target/release/bundle/msi/*.msi
+
+      - name: Upload NSIS installer
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-installer-nsis
+          path: src-tauri/target/release/bundle/nsis/*.exe
