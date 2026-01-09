@@ -17,6 +17,7 @@ const emit = defineEmits<{
 
 const localComponent = ref<EditableComponent>({ ...props.component });
 
+// ОБНОВЛЕНО: используем новое поле status
 const rowClass = computed(() => {
     const classes = ["editable-row"];
 
@@ -24,35 +25,44 @@ const rowClass = computed(() => {
         classes.push("row-selected");
     }
 
-    if (localComponent.value.material.new_item) {
-        classes.push("row-new");
-    } else if (localComponent.value.material.isEqual === false) {
-        classes.push("row-not-equal");
-    } else if (localComponent.value.material.isEqual === true) {
-        classes.push("row-equal");
+    switch (localComponent.value.status) {
+        case "equal":
+            classes.push("row-equal");
+            break;
+        case "notEqual":
+            classes.push("row-not-equal");
+            break;
+        case "new":
+            classes.push("row-new");
+            break;
     }
 
     return classes.join(" ");
 });
 
+// ОБНОВЛЕНО: просто возвращаем status
 const status = computed(() => {
-    if (localComponent.value.material.new_item) return "new";
-    if (localComponent.value.material.isEqual === false) return "notEqual";
-    if (localComponent.value.material.isEqual === true) return "equal";
-    return "unknown";
+    return localComponent.value.status || "unknown";
 });
 
 const handleBlur = () => {
     emit("update", { ...localComponent.value });
 };
 
+// ОБНОВЛЕНО: переключаем статус циклически
 const toggleStatus = () => {
-    if (localComponent.value.material.isEqual === null) {
-        localComponent.value.material.isEqual = true;
-    } else if (localComponent.value.material.isEqual === true) {
-        localComponent.value.material.isEqual = false;
-    } else {
-        localComponent.value.material.isEqual = null;
+    switch (localComponent.value.status) {
+        case "equal":
+            localComponent.value.status = "notEqual";
+            break;
+        case "notEqual":
+            localComponent.value.status = "new";
+            break;
+        case "new":
+            localComponent.value.status = "equal";
+            break;
+        default:
+            localComponent.value.status = "equal";
     }
 
     handleBlur();
@@ -79,6 +89,7 @@ watch(
 
 <template>
     <tr :class="rowClass">
+        <!-- Checkbox -->
         <td class="cell-checkbox">
             <input
                 type="checkbox"
@@ -88,10 +99,12 @@ watch(
             />
         </td>
 
+        <!-- Status -->
         <td class="cell-status">
             <StatusBadge :status="status" @toggle="toggleStatus" />
         </td>
 
+        <!-- Position -->
         <td class="cell-pos">
             <input
                 v-model="localComponent.pos"
@@ -101,6 +114,7 @@ watch(
             />
         </td>
 
+        <!-- Description -->
         <td class="cell-description">
             <input
                 v-model="localComponent.description"
@@ -110,37 +124,50 @@ watch(
             />
         </td>
 
+        <!-- ОБНОВЛЕНО: Material (PDF) - редактируемая строка -->
         <td class="cell-material">
             <input
-                v-model="localComponent.material.value"
+                v-model="localComponent.material"
                 @blur="handleBlur"
                 class="input-field input-material"
                 placeholder="Material from PDF"
             />
         </td>
 
-        <td class="cell-manager">
-            <input
-                v-model="localComponent.material.from_manager_data"
-                @blur="handleBlur"
-                class="input-field input-manager"
-                placeholder="Manager data"
-            />
+        <!-- НОВОЕ: BOM Material - только чтение -->
+        <td class="cell-bom-material">
+            <span class="read-only-field">
+                {{ localComponent.bom_material || "-" }}
+            </span>
         </td>
 
+        <!-- НОВОЕ: Order Material - только чтение -->
+        <td class="cell-order-material">
+            <span class="read-only-field">
+                {{ localComponent.order_material || "-" }}
+            </span>
+        </td>
+
+        <!-- ОБНОВЛЕНО: Quantity (BOM) - редактируемое число -->
         <td class="cell-quantity">
             <input
-                v-if="localComponent.quantity"
-                v-model.number="localComponent.quantity.value"
+                v-model.number="localComponent.quantity"
                 type="number"
                 @blur="handleBlur"
                 class="input-field input-quantity"
                 min="0"
                 placeholder="0"
             />
-            <span v-else class="text-gray-400">-</span>
         </td>
 
+        <!-- НОВОЕ: Manager Quantity - только чтение -->
+        <td class="cell-manager-qty">
+            <span class="read-only-field">
+                {{ localComponent.manager_quantity || "-" }}
+            </span>
+        </td>
+
+        <!-- Note -->
         <td class="cell-note">
             <input
                 v-model="localComponent.note"
@@ -150,6 +177,7 @@ watch(
             />
         </td>
 
+        <!-- Actions -->
         <td class="cell-actions">
             <button
                 @click="handleDelete"
@@ -161,3 +189,21 @@ watch(
         </td>
     </tr>
 </template>
+
+<style scoped>
+.read-only-field {
+    display: block;
+    padding: 0.5rem;
+    color: #666;
+    font-style: italic;
+    background: #f5f5f5;
+    border-radius: 0.25rem;
+    text-align: center;
+}
+
+.cell-bom-material,
+.cell-order-material,
+.cell-manager-qty {
+    background: #fafafa;
+}
+</style>

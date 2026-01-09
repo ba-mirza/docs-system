@@ -6,6 +6,10 @@ import type {
   UploadFiles,
   Statistics,
 } from "../types/parser.types";
+import {
+  isLegacyComponent,
+  convertLegacyComponent,
+} from "../types/parser.types";
 import { ApiService } from "../services/api.service";
 
 export const useParserStore = defineStore("parser", () => {
@@ -21,13 +25,14 @@ export const useParserStore = defineStore("parser", () => {
   const isLoading = ref(false);
   const error = ref<string | null>(null);
 
+  // ОБНОВЛЕНО: используем новое поле status
   const statistics = computed<Statistics>(() => {
     const components = editableComponents.value;
     return {
       total: components.length,
-      equal: components.filter((c) => c.material.isEqual === true).length,
-      notEqual: components.filter((c) => c.material.isEqual === false).length,
-      newItems: components.filter((c) => c.material.new_item === true).length,
+      equal: components.filter((c) => c.status === "equal").length,
+      notEqual: components.filter((c) => c.status === "notEqual").length,
+      newItems: components.filter((c) => c.status === "new").length,
     };
   });
 
@@ -72,13 +77,21 @@ export const useParserStore = defineStore("parser", () => {
 
       parseResult.value = result;
 
+      // ОБНОВЛЕНО: добавлена поддержка legacy структуры
       editableComponents.value =
-        result.data?.table2.map((comp, index) => ({
-          ...comp,
-          id: `comp-${index}-${Date.now()}`,
-          isEditing: false,
-          isSelected: false,
-        })) || [];
+        result.data?.table2.map((comp, index) => {
+          // Если это старая структура - конвертируем
+          const normalizedComp = isLegacyComponent(comp)
+            ? convertLegacyComponent(comp)
+            : comp;
+
+          return {
+            ...normalizedComp,
+            id: `comp-${index}-${Date.now()}`,
+            isEditing: false,
+            isSelected: false,
+          } as EditableComponent;
+        }) || [];
     } catch (err) {
       error.value = err instanceof Error ? err.message : "Unknown error";
       console.error("Parsing error:", err);
@@ -97,19 +110,18 @@ export const useParserStore = defineStore("parser", () => {
     }
   };
 
+  // ОБНОВЛЕНО: новая структура данных
   const addNewComponent = () => {
     const newComp: EditableComponent = {
       id: `comp-new-${Date.now()}`,
+      pos: "",
       description: "",
-      material: {
-        value: "",
-        isEqual: null,
-        new_item: false,
-      },
-      quantity: {
-        value: 0,
-        from_bom: false,
-      },
+      material: "",
+      bom_material: null,
+      order_material: null,
+      quantity: null,
+      manager_quantity: null,
+      status: "new",
       note: "",
       isEditing: true,
       isSelected: false,

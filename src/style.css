@@ -680,7 +680,7 @@ h1 {
     }
 
     .badge-equal {
-        @apply bg-[#D0E8D0] border-[#8B8] text-[#060];
+        @apply bg-green-400 border-[#8B8] text-[#060];
     }
 
     .badge-equal.badge-editable:hover {
@@ -688,7 +688,7 @@ h1 {
     }
 
     .badge-notEqual {
-        @apply bg-[#F0D0D0] border-[#C88] text-[#A00];
+        @apply bg-red-400 border-[#C88] text-[#A00];
     }
 
     .badge-notEqual.badge-editable:hover {
@@ -696,7 +696,7 @@ h1 {
     }
 
     .badge-new {
-        @apply bg-[#F8E8C0] border-[#CB8] text-[#840];
+        @apply bg-yellow-400 border-[#CB8] text-[#840];
     }
 
     .badge-new.badge-editable:hover {
@@ -721,40 +721,28 @@ h1 {
         @apply transition-all duration-100;
     }
 
-    .editable-row:nth-child(even) {
-        @apply bg-[#F8F8F8];
-    }
-
-    .editable-row:nth-child(odd) {
-        @apply bg-white;
-    }
-
-    .editable-row:hover {
-        @apply bg-[#F0F4F8];
-    }
-
     .row-equal {
-        @apply bg-[#E8F8E8];
+        @apply bg-green-200;
     }
 
     .row-equal:hover {
-        @apply bg-[#D8EDD8];
+        @apply bg-green-100;
     }
 
     .row-not-equal {
-        @apply bg-[#FFE8E8];
+        @apply bg-red-200;
     }
 
     .row-not-equal:hover {
-        @apply bg-[#FFD8D8];
+        @apply bg-red-100;
     }
 
     .row-new {
-        @apply bg-[#FFF8E0];
+        @apply bg-yellow-200;
     }
 
     .row-new:hover {
-        @apply bg-[#FFEDD0];
+        @apply bg-yellow-100;
     }
 
     .row-selected {

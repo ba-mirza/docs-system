@@ -22,15 +22,16 @@ const selectAllChecked = ref(false);
 const filteredComponents = computed(() => {
     let filtered = editableComponents.value;
 
+    // ОБНОВЛЕНО: используем новое поле status
     if (filterType.value !== "all") {
         filtered = filtered.filter((comp) => {
             switch (filterType.value) {
                 case "equal":
-                    return comp.material.isEqual === true;
+                    return comp.status === "equal";
                 case "notEqual":
-                    return comp.material.isEqual === false;
+                    return comp.status === "notEqual";
                 case "new":
-                    return comp.material.new_item === true;
+                    return comp.status === "new";
                 default:
                     return true;
             }
@@ -42,10 +43,9 @@ const filteredComponents = computed(() => {
         filtered = filtered.filter((comp) => {
             return (
                 comp.description?.toLowerCase().includes(query) ||
-                comp.material.value?.toLowerCase().includes(query) ||
-                comp.material.from_manager_data
-                    ?.toLowerCase()
-                    .includes(query) ||
+                comp.material?.toLowerCase().includes(query) ||
+                comp.bom_material?.toLowerCase().includes(query) ||
+                comp.order_material?.toLowerCase().includes(query) ||
                 comp.pos?.toLowerCase().includes(query)
             );
         });
@@ -175,9 +175,12 @@ const handleToggleSelect = (id: string) => {
                         <th class="th-status">Status</th>
                         <th class="th-pos">Pos</th>
                         <th class="th-description">Description</th>
+                        <!-- ОБНОВЛЕНО: новые колонки -->
                         <th class="th-material">Material (PDF)</th>
-                        <th class="th-manager">Manager Data</th>
-                        <th class="th-quantity">Qty</th>
+                        <th class="th-bom-material">BOM Material</th>
+                        <th class="th-order-material">Order Material</th>
+                        <th class="th-quantity">Qty (BOM)</th>
+                        <th class="th-manager-qty">Qty (Order)</th>
                         <th class="th-note">Note</th>
                         <th class="th-actions">Actions</th>
                     </tr>
@@ -220,10 +223,7 @@ const handleToggleSelect = (id: string) => {
             <div class="legend-items">
                 <div class="legend-item">
                     <div class="legend-color legend-equal"></div>
-                    <span
-                        >✅ Equal - Materials match between PDF and
-                        Manager</span
-                    >
+                    <span>✅ Equal - Materials match (smart comparison)</span>
                 </div>
                 <div class="legend-item">
                     <div class="legend-color legend-not-equal"></div>
@@ -237,3 +237,22 @@ const handleToggleSelect = (id: string) => {
         </div>
     </div>
 </template>
+
+<style scoped>
+/* Добавлены ширины для новых колонок */
+.th-material {
+    min-width: 180px;
+}
+.th-bom-material {
+    min-width: 150px;
+}
+.th-order-material {
+    min-width: 150px;
+}
+.th-quantity {
+    min-width: 80px;
+}
+.th-manager-qty {
+    min-width: 80px;
+}
+</style>

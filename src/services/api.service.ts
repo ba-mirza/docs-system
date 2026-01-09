@@ -1,14 +1,6 @@
 import type { ParseResponse } from "../types/parser.types";
 
-const API_BASE_URL = import.meta.env.VITE_API_URL;
-
-const getApiKey = (): string => {
-  const key = localStorage.getItem("claude_api_key");
-  if (!key) {
-    throw new Error("API key not configured");
-  }
-  return key;
-};
+const API_BASE_URL = "http://localhost:8000";
 
 export class ApiService {
   static async parsePdf(
@@ -26,9 +18,6 @@ export class ApiService {
     const response = await fetch(`${API_BASE_URL}/api/parse-pdf`, {
       method: "POST",
       body: formData,
-      headers: {
-        "X-API-Key": getApiKey(),
-      },
     });
 
     if (!response.ok) {
