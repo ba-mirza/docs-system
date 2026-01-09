@@ -1,17 +1,12 @@
-// ============================================
-// ОБНОВЛЕНО: Новая структура данных
-// Material теперь всегда строка из PDF (истина!)
-// ============================================
-
 export interface Component {
   pos?: string;
   description: string;
-  material: string; // ← ИЗМЕНЕНО: теперь строка (из PDF)
-  bom_material?: string | null; // ← НОВОЕ: материал из BOM
-  order_material?: string | null; // ← НОВОЕ: материал из Order
-  quantity?: number | null; // ← ИЗМЕНЕНО: просто число (из BOM)
-  manager_quantity?: number | null; // ← НОВОЕ: количество из Order
-  status: "equal" | "notEqual" | "new"; // ← НОВОЕ: статус сравнения
+  material: string;
+  bom_material?: string | null;
+  order_material?: string | null;
+  quantity?: number | null;
+  manager_quantity?: number | null;
+  status: "equal" | "notEqual" | "new";
   note?: string;
 }
 
@@ -70,9 +65,7 @@ export interface EditableComponent extends Component {
   isSelected?: boolean;
 }
 
-// ============================================
 // LEGACY SUPPORT (для обратной совместимости)
-// ============================================
 // Если backend вернет старую структуру - автоматически конвертируем
 
 export interface LegacyMaterialInfo {
@@ -95,11 +88,9 @@ export interface LegacyComponent {
   note?: string;
 }
 
-// Конвертер из старой структуры в новую
 export function convertLegacyComponent(legacy: LegacyComponent): Component {
   const materialObj = legacy.material;
 
-  // Определяем статус
   let status: "equal" | "notEqual" | "new" = "new";
   if (materialObj.new_item) {
     status = "new";

@@ -25,7 +25,6 @@ export const useParserStore = defineStore("parser", () => {
   const isLoading = ref(false);
   const error = ref<string | null>(null);
 
-  // ОБНОВЛЕНО: используем новое поле status
   const statistics = computed<Statistics>(() => {
     const components = editableComponents.value;
     return {
@@ -77,10 +76,8 @@ export const useParserStore = defineStore("parser", () => {
 
       parseResult.value = result;
 
-      // ОБНОВЛЕНО: добавлена поддержка legacy структуры
       editableComponents.value =
         result.data?.table2.map((comp, index) => {
-          // Если это старая структура - конвертируем
           const normalizedComp = isLegacyComponent(comp)
             ? convertLegacyComponent(comp)
             : comp;
@@ -110,7 +107,6 @@ export const useParserStore = defineStore("parser", () => {
     }
   };
 
-  // ОБНОВЛЕНО: новая структура данных
   const addNewComponent = () => {
     const newComp: EditableComponent = {
       id: `comp-new-${Date.now()}`,

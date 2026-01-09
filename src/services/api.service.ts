@@ -1,6 +1,6 @@
 import type { ParseResponse } from "../types/parser.types";
 
-const API_BASE_URL = "http://localhost:8000";
+const API_BASE_URL = import.meta.env.VITE_API_URL;
 
 export class ApiService {
   static async parsePdf(
@@ -28,6 +28,7 @@ export class ApiService {
   }
 
   static async exportToExcel(data: ParseResponse): Promise<Blob> {
+    console.log(API_BASE_URL);
     const response = await fetch(`${API_BASE_URL}/api/export-excel`, {
       method: "POST",
       headers: {
